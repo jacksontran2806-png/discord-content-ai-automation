@@ -1,16 +1,61 @@
 import type { Metadata } from "next"
 
 /**
- * Resolution order (host-agnostic — works on Cloudflare, Vercel, or anywhere):
- *   1. NEXT_PUBLIC_SITE_URL          — set this to the custom domain. Preferred.
- *   2. CF_PAGES_URL                  — Cloudflare Pages deployment host
- *   3. VERCEL_PROJECT_PRODUCTION_URL — stable production host on Vercel
- *   4. VERCEL_URL                    — per-deployment preview host on Vercel
- *   5. localhost                     — dev
+ * The domain the site is actually served from. Registered and DNS-hosted at
+ * Cloudflare; the app itself is built and served by Vercel.
+ */
+export const productionUrl = "https://hardwaretesthub.net"
+
+/**
+ * Whether this build is the real, public production deployment. Only production
+ * is indexable — previews and local builds must never enter a search index.
+ *
+ * Host-agnostic on purpose. Keying this off a single provider's variable (e.g.
+ * VERCEL_ENV) silently deindexes the whole site the moment you deploy anywhere
+ * else, because the variable is simply absent.
+ *
+ *   1. NEXT_PUBLIC_SITE_ENV — explicit override, set to "production"
+ *   2. Cloudflare Pages — deployed branch equals the production branch
+ *   3. Vercel — VERCEL_ENV
+ *
+ * Default is false: an unrecognised environment stays out of the index rather
+ * than risking a preview host being crawled.
+ */
+function resolveIsProduction(): boolean {
+  const explicit = process.env.NEXT_PUBLIC_SITE_ENV
+  if (explicit) return explicit === "production"
+
+  const cfBranch = process.env.CF_PAGES_BRANCH
+  if (cfBranch) {
+    const productionBranch = process.env.CF_PAGES_PRODUCTION_BRANCH ?? "main"
+    return cfBranch === productionBranch
+  }
+
+  if (process.env.VERCEL_ENV) return process.env.VERCEL_ENV === "production"
+
+  return false
+}
+
+export const isProduction = resolveIsProduction()
+
+/**
+ * Resolution order:
+ *   1. NEXT_PUBLIC_SITE_URL          — explicit override for the canonical origin
+ *   2. productionUrl                 — on any production build
+ *   3. CF_PAGES_URL                  — Cloudflare Pages deployment host
+ *   4. VERCEL_PROJECT_PRODUCTION_URL — stable production host on Vercel
+ *   5. VERCEL_URL                    — per-deployment preview host on Vercel
+ *   6. localhost                     — dev
+ *
+ * Step 2 matters: without it a production build with no explicit variable would
+ * emit canonical URLs and a sitemap pointing at *.vercel.app, competing with the
+ * real domain for the same content.
  */
 function resolveSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL
   if (explicit) return explicit.replace(/\/$/, "")
+
+  if (isProduction) return productionUrl
 
   // Cloudflare Pages already gives a full origin, including protocol.
   const cloudflareUrl = process.env.CF_PAGES_URL
@@ -44,41 +89,6 @@ export const siteConfig = {
   locale: "en_US",
   themeColor: "#0a0a0a",
 } as const
-
-/**
- * Whether this build is the real, public production deployment. Only production
- * is indexable — previews and local builds must never enter a search index.
- *
- * Host-agnostic on purpose. Keying this off a single provider's variable (e.g.
- * VERCEL_ENV) silently deindexes the whole site the moment you deploy anywhere
- * else, because the variable is simply absent.
- *
- *   1. NEXT_PUBLIC_SITE_ENV — explicit override. Set to "production" on the
- *      production deployment. This is the reliable switch on Cloudflare Pages
- *      and Workers, neither of which exposes a production/preview flag that
- *      Next can read at build time.
- *   2. Cloudflare Pages — the deployed branch equals the production branch.
- *   3. Vercel — VERCEL_ENV.
- *
- * Default is false: an unrecognised environment stays out of the index rather
- * than risking a preview host being crawled.
- */
-function resolveIsProduction(): boolean {
-  const explicit = process.env.NEXT_PUBLIC_SITE_ENV
-  if (explicit) return explicit === "production"
-
-  const cfBranch = process.env.CF_PAGES_BRANCH
-  if (cfBranch) {
-    const productionBranch = process.env.CF_PAGES_PRODUCTION_BRANCH ?? "main"
-    return cfBranch === productionBranch
-  }
-
-  if (process.env.VERCEL_ENV) return process.env.VERCEL_ENV === "production"
-
-  return false
-}
-
-export const isProduction = resolveIsProduction()
 
 /** Applied to private tool pages: crawlable by nobody, ever. */
 export const noIndex: Metadata["robots"] = {

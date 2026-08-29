@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   compress: true,
   // Trailing-slash variants would otherwise be a second URL for the same page.
   trailingSlash: false,
+  async redirects() {
+    return [
+      {
+        // One canonical host. www and apex serving the same pages is duplicate
+        // content and splits any link equity between them.
+        source: "/:path*",
+        has: [{ type: "host", value: "www.hardwaretesthub.net" }],
+        destination: "https://hardwaretesthub.net/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

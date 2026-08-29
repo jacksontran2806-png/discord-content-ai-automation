@@ -1,5 +1,6 @@
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { pageMetadata } from "@/lib/seo"
 
 const history = [
   { id: 1, topic: "How black holes form", date: "Apr 9", platform: "Discord", provider: "Claude", chars: 892 },
@@ -8,6 +9,12 @@ const history = [
   { id: 4, topic: "What is quantum entanglement", date: "Apr 6", platform: "Discord", provider: "Claude", chars: 921 },
   { id: 5, topic: "How the internet works", date: "Apr 5", platform: "Discord", provider: "Claude", chars: 678 },
 ]
+
+export const metadata = pageMetadata({
+  title: "History",
+  description: "Every post published to Discord, with provider, length, and date.",
+  path: "/history",
+})
 
 export default function HistoryPage() {
   return (

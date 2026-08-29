@@ -1,11 +1,18 @@
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SettingsActions } from "@/components/settings-actions"
+import { pageMetadata } from "@/lib/seo"
 
 function mask(value: string | undefined, show = 8): string {
   if (!value) return "Not set"
   return value.slice(0, show) + "••••••••••••••••"
 }
+
+export const metadata = pageMetadata({
+  title: "Settings",
+  description: "API key status, Discord webhook, cron schedule, and history controls.",
+  path: "/settings",
+})
 
 export default function SettingsPage() {
   const anthropicKey = mask(process.env.ANTHROPIC_API_KEY)

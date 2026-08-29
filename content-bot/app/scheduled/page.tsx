@@ -1,5 +1,12 @@
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { ScheduledPosts } from "@/components/scheduled-posts"
+import { pageMetadata } from "@/lib/seo"
+
+export const metadata = pageMetadata({
+  title: "Scheduled Posts",
+  description: "View, reschedule, and cancel posts queued to send automatically.",
+  path: "/scheduled",
+})
 
 export default function ScheduledPage() {
   return (
